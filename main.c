@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
 	}	
 
 	vtk_window win;
-	err = vtk_window_new(&win, vtk, "Adrift", 0, 0, 300, 600);
+	err = vtk_window_new(&win, vtk, "Adrift", 0, 0, 300, 650);
 	if (err) {
 		fprintf(stderr, "Error initializing vtk window: %s\n", vtk_strerr(err));
 		vtk_destroy(vtk);
