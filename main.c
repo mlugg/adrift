@@ -82,6 +82,18 @@ void update_handler(vtk_event ev, void *u) {
 }
 
 int main(int argc, char **argv) {
+	if (argc > 2 || (argc == 2 && !strcmp(argv[1], "-h"))) {
+		fprintf(stderr, "Usage: %s [path]\n", argv[0]);
+		return argc > 2;
+	}
+
+	if (argc == 2) {
+		if (chdir(argv[1])) {
+			fprintf(stderr, "Failed to chdir to %s\n", argv[1]);
+			return 1;
+		}
+	}
+
 	enum widget_type widgets[] = {
 		WIDGET_GAME_NAME,
 		WIDGET_CATEGORY_NAME,
