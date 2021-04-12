@@ -1,7 +1,13 @@
 #include "timer.h"
+#include "io.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#define RUNS_DIR "runs"
 
 static bool _update_expanded(int active_split, struct split *splits, size_t nsplits) {
 	bool expand = false;
@@ -31,9 +37,12 @@ static void _commit_pb(struct split *splits, size_t nsplits) {
 
 static void _run_finish(struct state *s) {
 	struct split *final = get_final_split(s);
-	// TODO: save run to file
+	mkdir(RUNS_DIR, 0777);
+	char run_name[64];
+	strftime(run_name, sizeof run_name, RUNS_DIR "/%Y-%m-%d_%H.%M.%S", localtime(&s->run_started));
+	save_times(s->splits, s->nsplits, run_name, offsetof(struct times, cur));
 	if (final->split.times.cur < final->split.times.pb) {
-		// TODO: symlink run as pb
+		symlink(run_name, "pb");
 	}
 }
 
@@ -54,6 +63,7 @@ void update_expanded(struct state *s) {
 
 void timer_begin(struct state *s) {
 	s->active_split = 0;
+	s->run_started = time(NULL);
 	update_expanded(s);
 }
 

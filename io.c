@@ -46,9 +46,8 @@ static ssize_t _read_splits(FILE *f, unsigned *id, unsigned level, struct split 
 
 		char *name;
 		uint64_t best = UINT64_MAX;
-		uint64_t pb = UINT64_MAX;
 		
-		int match = sscanf(line + ntabs, "\"%m[^\n\"]\" %"PRIu64" %"PRIu64, &name, &best, &pb);
+		int match = sscanf(line + ntabs, "\"%m[^\n\"]\" %"PRIu64, &name, &best);
 
 		if (match < 1) {
 			free(line);
@@ -68,8 +67,9 @@ static ssize_t _read_splits(FILE *f, unsigned *id, unsigned level, struct split 
 			splits[nsplits].split.id = (*id)++;
 			splits[nsplits].split.times = (struct times){
 				.cur = UINT64_MAX,
-				.pb = pb,
+				.pb = UINT64_MAX,
 				.best = best,
+				.golded_this_run = false,
 			};
 		} else {
 			// We have subsplits, so it's a group
@@ -122,4 +122,91 @@ ssize_t read_splits_file(const char *path, struct split **out) {
 	fclose(f);
 
 	return nsplits;
+}
+
+static bool _read_times(FILE *f, size_t off, struct split *splits, size_t nsplits) {
+	for (size_t i = 0; i < nsplits; ++i) {
+		if (splits[i].is_group) {
+			if (!_read_times(f, off, splits[i].group.splits, splits[i].group.nsplits)) {
+				return false;
+			}
+		} else {
+			uint64_t val;
+			int dummy = -1;
+			if (fscanf(f, "-\n%n", &dummy) == 0 && dummy != -1) {
+				*(uint64_t *)((char *)&splits[i].split.times + off) = UINT64_MAX;
+			} else if (fscanf(f, "%"PRIu64"\n", &val) == 1) {
+				*(uint64_t *)((char *)&splits[i].split.times + off) = val;
+			} else {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+static void _clear_times(size_t off, struct split *splits, size_t nsplits) {
+	for (size_t i = 0; i < nsplits; ++i) {
+		if (splits[i].is_group) {
+			_clear_times(off, splits[i].group.splits, splits[i].group.nsplits);
+		} else {
+			*(uint64_t *)((char *)&splits[i].split.times + off) = UINT64_MAX;
+		}
+	}
+}
+
+bool read_times(struct split *splits, size_t nsplits, const char *path, size_t off) {
+	FILE *f = fopen(path, "r");
+
+	if (!f) {
+		return false;
+	}
+
+	bool success = _read_times(f, off, splits, nsplits);
+
+	// TODO: enforce eof
+
+	fclose(f);
+
+	if (!success) {
+		_clear_times(off, splits, nsplits);
+	}
+
+	return success;
+}
+
+bool _save_times(FILE *f, size_t off, struct split *splits, size_t nsplits) {
+	for (size_t i = 0; i < nsplits; ++i) {
+		if (splits[i].is_group) {
+			_save_times(f, off, splits[i].group.splits, splits[i].group.nsplits);
+		} else {
+			uint64_t time = *(uint64_t *)((char *)&splits[i].split.times + off);
+			if (time == UINT64_MAX) {
+				if (fputs("-\n", f) == EOF) {
+					return false;
+				}
+			} else {
+				if (fprintf(f, "%"PRIu64"\n", time) == EOF) {
+					return false;
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
+bool save_times(struct split *splits, size_t nsplits, const char *path, size_t off) {
+	FILE *f = fopen(path, "w");
+
+	if (!f) {
+		return false;
+	}
+
+	bool success = _save_times(f, off, splits, nsplits);
+
+	fclose(f);
+
+	return success;
 }

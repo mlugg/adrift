@@ -105,18 +105,17 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 		} else {
 			// There's a time for the current run
 			const char *delta = "-";
+			if (comparison != UINT64_MAX) {
+				if (cur < comparison) delta = format_time(comparison - cur, '-', false);
+				else delta = format_time(cur - comparison, '+', false);
+			}
+
 			float r = 1.0f, g = 1.0f, b = 1.0f;
-
-			bool gold = times.golded_this_run && !splits[i].is_group;
-
-			if (gold) {
+			if (times.golded_this_run && !splits[i].is_group) {
 				r = 1.0f;
 				g = 0.9f;
 				b = 0.3f;
 			} else if (comparison != UINT64_MAX) {
-				if (cur < comparison) delta = format_time(comparison - cur, '-', false);
-				else delta = format_time(cur - comparison, '+', false);
-
 				if (cur < comparison) {
 					r = 0.2f;
 					g = 1.0f;

@@ -13,6 +13,7 @@ static bool stop_input = false;
 
 void close_handler(vtk_event ev, void *u) {
 	struct state *s = u;
+	save_times(s->splits, s->nsplits, "golds", offsetof(struct times, best));
 	vtk_window_close(s->win);
 }
 
@@ -40,7 +41,7 @@ void update_handler(vtk_event ev, void *u) {
 	vtk_window_redraw(s->win);
 }
 
-int main() {
+int main(int argc, char **argv) {
 	enum widget_type widgets[] = {
 		WIDGET_GAME_NAME,
 		WIDGET_CATEGORY_NAME,
@@ -56,6 +57,14 @@ int main() {
 
 	if (nsplits == -1) {
 		return 1;
+	}
+
+	if (!read_times(splits, nsplits, "pb", offsetof(struct times, pb))) {
+		fputs("Warning: could not read PB\n", stderr);
+	}
+
+	if (!read_times(splits, nsplits, "golds", offsetof(struct times, best))) {
+		fputs("Warning: could not read golds\n", stderr);
 	}
 
 	int err;
