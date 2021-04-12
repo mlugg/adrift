@@ -3,27 +3,63 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdatomic.h>
+#include <signal.h>
+#include <unistd.h>
 
 #include "draw.h"
 #include "common.h"
 #include "io.h"
 #include "timer.h"
 
-static bool stop_input = false;
+static atomic_bool _g_exited = false;
+static atomic_int _g_splitter_fd = -1;
 
-void close_handler(vtk_event ev, void *u) {
-	struct state *s = u;
-	save_times(s->splits, s->nsplits, "golds", offsetof(struct times, best));
-	vtk_window_close(s->win);
+static vtk_window _g_win;
+
+static void int_handler(int signal) {
+	vtk_window_close(_g_win);
 }
 
-int input_main(void *u) {
+static void close_handler(vtk_event ev, void *u) {
+	vtk_window_close(_g_win);
+}
+
+static int input_main(void *u) {
 	struct state *s = u;
 
-	while (!stop_input) {
+	int pipefd[2];
+	if (pipe(pipefd) == -1) {
+		fputs("Failed to create pipe\n", stderr);
+		exit(1);
+	}
+
+	_g_splitter_fd = pipefd[0];
+
+	pid_t pid = 0;
+
+	pid = fork();
+	if (pid == 0) {
+		// Child
+		close(pipefd[0]);
+		dup2(pipefd[1], STDOUT_FILENO);
+		execlp("./splitter", "./splitter", NULL);
+		fputs("Failed to exec splitter\n", stderr);
+		exit(1);
+	} else if (pid == -1) {
+		fputs("Failed to fork\n", stderr);
+		exit(1);
+	}
+
+	// Parent
+	close(pipefd[1]);
+
+	FILE *f = fdopen(pipefd[0], "r");
+
+	while (true) {
 		char *line = NULL;
 		size_t n = 0;
-		if (getline(&line, &n, stdin) == -1) {
+		if (getline(&line, &n, f) == -1) {
 			free(line);
 			break;
 		}
@@ -31,6 +67,10 @@ int input_main(void *u) {
 		timer_parse(s, line);
 		free(line);
 		vtk_window_trigger_update(s->win);
+	}
+
+	if (pid) {
+		kill(pid, SIGINT);
 	}
 
 	return 0;
@@ -105,6 +145,8 @@ int main(int argc, char **argv) {
 		.split_time = 0,
 	};
 
+	_g_win = win;
+
 	thrd_t inp_thrd;
 	if (thrd_create(&inp_thrd, &input_main, &s) != thrd_success) {
 		fputs("Error creating thread\n", stderr);
@@ -117,14 +159,21 @@ int main(int argc, char **argv) {
 	vtk_window_set_event_handler(win, VTK_EV_CLOSE, close_handler, &s);
 	vtk_window_set_event_handler(win, VTK_EV_UPDATE, update_handler, &s);
 
+	signal(SIGINT, &int_handler);
+
 	vtk_window_mainloop(win);
 
 	vtk_window_destroy(win);
 	vtk_destroy(vtk);
 
-	stop_input = true; // FIXME: unsafe
+	_g_exited = true;
+	if (_g_splitter_fd >= 0) {
+		close(_g_splitter_fd);
+	}
 
 	thrd_join(inp_thrd, NULL);
+
+	save_times(splits, nsplits, "golds", offsetof(struct times, best));
 
 	return 0;
 }
