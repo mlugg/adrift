@@ -42,6 +42,7 @@ static void _run_finish(struct state *s) {
 	strftime(run_name, sizeof run_name, RUNS_DIR "/%Y-%m-%d_%H.%M.%S", localtime(&s->run_started));
 	save_times(s->splits, s->nsplits, run_name, offsetof(struct times, cur));
 	if (final->split.times.cur < final->split.times.pb) {
+		unlink("pb");
 		symlink(run_name, "pb");
 	}
 }
