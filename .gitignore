@@ -1,3 +1,6 @@
 *.o
 adrift
 splits
+golds
+pb
+runs/
