@@ -4,9 +4,30 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define TEXT_PAD 3
 #define TIMER_PRECISION 3
+
+// To stop the timer position doing weird things, we assume the width of
+// digits is constant
+int get_approx_time_width(struct state *s, const char *str) {
+	size_t len = strlen(str) + 1;
+	char *buf = malloc(len);
+	for (size_t i = 0; i < len; ++i) {
+		char c = str[i];
+		if (c >= '0' && c <= '9') {
+			buf[i] = '0';
+		} else {
+			buf[i] = c;
+		}
+	}
+	cairo_text_extents_t ext;
+	cairo_text_extents(s->cr, buf, &ext);
+	free(buf);
+	return ext.width;
+}
 
 const char *format_time(uint64_t total, char prefix, bool long_format) {
 	if (total == UINT64_MAX) return "-";
@@ -49,6 +70,7 @@ enum align {
 	ALIGN_LEFT,
 	ALIGN_CENTER,
 	ALIGN_RIGHT,
+	ALIGN_RIGHT_TIME,
 };
 
 int get_font_height(struct state *s) {
@@ -58,8 +80,14 @@ int get_font_height(struct state *s) {
 }
 
 void draw_text(struct state *s, const char *str, int w, int h, int *y, bool update_y, enum align align, int off) {
-	cairo_text_extents_t ext;
-	cairo_text_extents(s->cr, str, &ext);
+	int width;
+	if (align == ALIGN_RIGHT_TIME) {
+		width = get_approx_time_width(s, str);
+	} else {
+		cairo_text_extents_t ext;
+		cairo_text_extents(s->cr, str, &ext);
+		width = ext.width;
+	}
 	cairo_font_extents_t fext;
 	cairo_font_extents(s->cr, &fext);
 	int old = *y;
@@ -69,10 +97,11 @@ void draw_text(struct state *s, const char *str, int w, int h, int *y, bool upda
 		cairo_move_to(s->cr, off + TEXT_PAD, *y);
 		break;
 	case ALIGN_CENTER:
-		cairo_move_to(s->cr, off + (w - off - ext.width) / 2, *y);
+		cairo_move_to(s->cr, off + (w - off - width) / 2, *y);
 		break;
 	case ALIGN_RIGHT:
-		cairo_move_to(s->cr, w - off - TEXT_PAD - ext.width, *y);
+	case ALIGN_RIGHT_TIME:
+		cairo_move_to(s->cr, w - off - TEXT_PAD - width, *y);
 		break;
 	}
 	cairo_show_text(s->cr, str);
@@ -158,12 +187,12 @@ void draw_widget(struct state *s, enum widget_type t, int w, int h, int *y) {
 	case WIDGET_TIMER:
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
 		cairo_set_font_size(s->cr, 28.0f);
-		draw_text(s, format_time(s->timer, 0, true), w, h, y, true, ALIGN_RIGHT, 0);
+		draw_text(s, format_time(s->timer, 0, true), w, h, y, true, ALIGN_RIGHT_TIME, 0);
 		break;
 	case WIDGET_SPLIT_TIMER:
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
 		cairo_set_font_size(s->cr, 21.0f);
-		draw_text(s, format_time(s->split_time, 0, true), w, h, y, true, ALIGN_RIGHT, 0);
+		draw_text(s, format_time(s->split_time, 0, true), w, h, y, true, ALIGN_RIGHT_TIME, 0);
 		break;
 	case WIDGET_SPLITS:
 		draw_splits(s, w, h, y, 0, s->splits, s->nsplits);
