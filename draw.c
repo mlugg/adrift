@@ -110,7 +110,7 @@ void draw_text(struct state *s, const char *str, int w, int h, int *y, bool upda
 }
 
 void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *splits, size_t nsplits) {
-	cairo_set_font_size(s->cr, 13.0f);
+	cairo_set_font_size(s->cr, 16.0f);
 	for (size_t i = 0; i < nsplits; ++i) {
 		struct times times = get_split_times(&splits[i]);
 		uint64_t comparison = get_comparison(s, times);
@@ -176,22 +176,22 @@ void draw_widget(struct state *s, enum widget_type t, int w, int h, int *y) {
 	switch (t) {
 	case WIDGET_GAME_NAME:
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
-		cairo_set_font_size(s->cr, 20.0f);
+		cairo_set_font_size(s->cr, 23.0f);
 		draw_text(s, s->game_name, w, h, y, true, ALIGN_CENTER, 0);
 		break;
 	case WIDGET_CATEGORY_NAME:
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
-		cairo_set_font_size(s->cr, 15.0f);
+		cairo_set_font_size(s->cr, 16.0f);
 		draw_text(s, s->category_name, w, h, y, true, ALIGN_CENTER, 0);
 		break;
 	case WIDGET_TIMER:
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
-		cairo_set_font_size(s->cr, 28.0f);
+		cairo_set_font_size(s->cr, 26.0f);
 		draw_text(s, format_time(s->timer, 0, true), w, h, y, true, ALIGN_RIGHT_TIME, 0);
 		break;
 	case WIDGET_SPLIT_TIMER:
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
-		cairo_set_font_size(s->cr, 21.0f);
+		cairo_set_font_size(s->cr, 24.0f);
 		draw_text(s, format_time(s->split_time, 0, true), w, h, y, true, ALIGN_RIGHT_TIME, 0);
 		break;
 	case WIDGET_SPLITS:
@@ -199,13 +199,13 @@ void draw_widget(struct state *s, enum widget_type t, int w, int h, int *y) {
 		break;
 	case WIDGET_SUM_OF_BEST:
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
-		cairo_set_font_size(s->cr, 15.0f);
+		cairo_set_font_size(s->cr, 17.0f);
 		draw_text(s, "Sum of best:", w, h, y, false, ALIGN_LEFT, 0);
 		draw_text(s, format_time(calc_sum_of_best(s), 0, true), w, h, y, true, ALIGN_RIGHT, 0);
 		break;
 	case WIDGET_BEST_POSSIBLE_TIME:
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
-		cairo_set_font_size(s->cr, 15.0f);
+		cairo_set_font_size(s->cr, 17.0f);
 		draw_text(s, "Best possible time:", w, h, y, false, ALIGN_LEFT, 0);
 		draw_text(s, format_time(calc_best_possible_time(s), 0, true), w, h, y, true, ALIGN_RIGHT, 0);
 		break;
@@ -219,7 +219,7 @@ void draw_handler(vtk_event ev, void *u) {
 	vtk_window_get_size(s->win, &w, &h);
 
 	cairo_rectangle(s->cr, 0, 0, w, h);
-	cairo_set_source_rgba(s->cr, 0, 0, 0, 0.5);
+	cairo_set_source_rgba(s->cr, 0, 0, 0, 0);
 	cairo_fill(s->cr);
 
 	int y = 0;
