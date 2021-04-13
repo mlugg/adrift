@@ -8,7 +8,7 @@ HDRS := $(wildcard *.h)
 
 all: adrift
 
-adrift: main.o draw.o common.o io.o calc.o timer.o
+adrift: main.o draw.o common.o io.o calc.o timer.o config.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:

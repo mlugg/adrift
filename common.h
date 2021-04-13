@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <threads.h>
 #include <time.h>
+#include "config.h"
 
 enum widget_type {
 	WIDGET_GAME_NAME,
@@ -67,6 +68,8 @@ struct state {
 	uint64_t split_time;
 
 	time_t run_started;
+
+	struct cfgdict *cfg;
 };
 
 struct split *get_split_by_id(struct state *s, unsigned id);

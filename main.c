@@ -119,6 +119,11 @@ int main(int argc, char **argv) {
 		fputs("Warning: could not read golds\n", stderr);
 	}
 
+	struct cfgdict *cfg = cfgdict_new();
+	if (!read_config("config", cfg)) {
+		fputs("Warning: could not read config\n", stderr);
+	}
+
 	int err;
 
 	vtk vtk;
@@ -155,6 +160,8 @@ int main(int argc, char **argv) {
 
 		.timer = 0,
 		.split_time = 0,
+
+		.cfg = cfg,
 	};
 
 	_g_win = win;
@@ -186,6 +193,8 @@ int main(int argc, char **argv) {
 	thrd_join(inp_thrd, NULL);
 
 	save_times(splits, nsplits, "golds", offsetof(struct times, best));
+
+	cfgdict_free(cfg);
 
 	return 0;
 }

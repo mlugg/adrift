@@ -9,6 +9,11 @@
 
 #define TEXT_PAD 3
 
+static void set_color_cfg(struct state *s, const char *k, float r, float g, float b, float a) {
+	config_get_color(s->cfg, k, &r, &g, &b, &a);
+	cairo_set_source_rgba(s->cr, r, g, b, a);
+}
+
 // To stop the timer position doing weird things, we assume the width of
 // digits is constant
 int get_approx_time_width(struct state *s, const char *str) {
@@ -140,7 +145,7 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 		bool active = !splits[i].is_group && splits[i].split.id == s->active_split;
 
 		if (active) {
-			cairo_set_source_rgba(s->cr, 1, 0, 0, 1);
+			set_color_cfg(s, "col_active_split", 1.0, 0.0, 0.0, 1.0);
 			cairo_rectangle(s->cr, 0, *y, w, get_font_height(s) + 2 * TEXT_PAD);
 			cairo_fill(s->cr);
 		}
@@ -148,7 +153,7 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 		if (cur == UINT64_MAX) {
 			if (comparison != UINT64_MAX) {
 				// There's a comparison, but no current time - draw comparison
-				cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
+				set_color_cfg(s, "col_split_time", 1.0, 1.0, 1.0, 1.0);
 				draw_text(s, format_time(comparison, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
 			}
 			// No time at all - draw nothing
@@ -160,31 +165,25 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 				else delta = format_time(cur - comparison, '+', 2);
 			}
 
-			float r = 1.0f, g = 1.0f, b = 1.0f;
 			if (times.golded_this_run && !splits[i].is_group) {
-				r = 1.0f;
-				g = 0.9f;
-				b = 0.3f;
+				set_color_cfg(s, "col_split_gold", 1.0, 0.9, 0.3, 1.0);
 			} else if (comparison != UINT64_MAX) {
 				if (cur < comparison) {
-					r = 0.2f;
-					g = 1.0f;
-					b = 0.2f;
+					set_color_cfg(s, "col_split_ahead", 0.2, 1.0, 0.2, 1.0);
 				} else {
-					r = 1.0f;
-					g = 0.2f;
-					b = 0.2f;
+					set_color_cfg(s, "col_split_behind", 1.0, 0.2, 0.2, 1.0);
 				}
+			} else {
+				set_color_cfg(s, "col_split_time", 1.0, 1.0, 1.0, 1.0);
 			}
 
-			cairo_set_source_rgba(s->cr, r, g, b, 1);
 			draw_text(s, delta, w, h, y, false, ALIGN_RIGHT, 65);
 
-			cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
+			set_color_cfg(s, "col_split_time", 1.0, 1.0, 1.0, 1.0);
 			draw_text(s, format_time(cur, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
 		}
 
-		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
+		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 		draw_text(s, splits[i].name, w, h, y, true, ALIGN_LEFT, off);
 
 		if (splits[i].is_group && splits[i].group.expanded) {
@@ -196,22 +195,22 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 void draw_widget(struct state *s, enum widget_type t, int w, int h, int *y) {
 	switch (t) {
 	case WIDGET_GAME_NAME:
-		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
+		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 		cairo_set_font_size(s->cr, 23.0f);
 		draw_text(s, s->game_name, w, h, y, true, ALIGN_CENTER, 0);
 		break;
 	case WIDGET_CATEGORY_NAME:
-		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
+		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 		cairo_set_font_size(s->cr, 16.0f);
 		draw_text(s, s->category_name, w, h, y, true, ALIGN_CENTER, 0);
 		break;
 	case WIDGET_TIMER:
-		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
+		set_color_cfg(s, "col_timer", 1.0, 1.0, 1.0, 1.0);
 		cairo_set_font_size(s->cr, 26.0f);
 		draw_text(s, format_time(s->timer, 0, 3), w, h, y, true, ALIGN_RIGHT_TIME, 0);
 		break;
 	case WIDGET_SPLIT_TIMER:
-		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
+		set_color_cfg(s, "col_timer", 1.0, 1.0, 1.0, 1.0);
 		cairo_set_font_size(s->cr, 24.0f);
 		draw_text(s, format_time(s->split_time, 0, 3), w, h, y, true, ALIGN_RIGHT_TIME, 0);
 		break;
@@ -219,13 +218,13 @@ void draw_widget(struct state *s, enum widget_type t, int w, int h, int *y) {
 		draw_splits(s, w, h, y, 0, s->splits, s->nsplits);
 		break;
 	case WIDGET_SUM_OF_BEST:
-		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
+		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 		cairo_set_font_size(s->cr, 17.0f);
 		draw_text(s, "Sum of best:", w, h, y, false, ALIGN_LEFT, 0);
 		draw_text(s, format_time(calc_sum_of_best(s), 0, 3), w, h, y, true, ALIGN_RIGHT, 0);
 		break;
 	case WIDGET_BEST_POSSIBLE_TIME:
-		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
+		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 		cairo_set_font_size(s->cr, 17.0f);
 		draw_text(s, "Best possible time:", w, h, y, false, ALIGN_LEFT, 0);
 		draw_text(s, format_time(calc_best_possible_time(s), 0, 3), w, h, y, true, ALIGN_RIGHT, 0);
@@ -240,7 +239,7 @@ void draw_handler(vtk_event ev, void *u) {
 	vtk_window_get_size(s->win, &w, &h);
 
 	cairo_rectangle(s->cr, 0, 0, w, h);
-	cairo_set_source_rgba(s->cr, 0, 0, 0, 0);
+	set_color_cfg(s, "col_background", 0.0, 0.0, 0.0, 0.0);
 	cairo_fill(s->cr);
 
 	int y = 0;

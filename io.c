@@ -197,3 +197,49 @@ bool save_times(struct split *splits, size_t nsplits, const char *path, size_t o
 
 	return success;
 }
+
+// TODO: this leaks memory, might be worth not doing that
+bool read_config(const char *path, struct cfgdict *cfg) {
+	FILE *f = fopen(path, "r");
+
+	if (!f) {
+		return false;
+	}
+
+	while (true) {
+		size_t allocd = 0;
+		char *line = NULL;
+		size_t n = getline(&line, &allocd, f);
+
+		if (n == -1) {
+			break;
+		}
+
+		if (n > 0) {
+			int p = -1;
+			char *k, *v;
+			int matched = sscanf(line, "%ms %ms %n", &k, &v, &p);
+			if (matched != 2 || p == -1) {
+				if (matched >= 2) free(v);
+				if (matched >= 1) free(k);
+				// TODO: clear cfg
+				fclose(f);
+				return false;
+			}
+			int ret = cfgdict_put(cfg, k, v);
+			if (ret == -1) {
+				free(k);
+				free(v);
+				// TODO: clear cfg
+				fclose(f);
+				return false;
+			} else if (ret == 1) {
+				fprintf(stderr, "Warning: duplicate config key %s\n", k);
+			}
+		}
+	}
+
+	fclose(f);
+
+	return true;
+}
