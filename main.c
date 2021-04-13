@@ -12,7 +12,6 @@
 #include "io.h"
 #include "timer.h"
 
-static atomic_bool _g_exited = false;
 static atomic_int _g_splitter_fd = -1;
 
 static vtk_window _g_win;
@@ -185,7 +184,6 @@ int main(int argc, char **argv) {
 	vtk_window_destroy(win);
 	vtk_destroy(vtk);
 
-	_g_exited = true;
 	if (_g_splitter_fd >= 0) {
 		close(_g_splitter_fd);
 	}
