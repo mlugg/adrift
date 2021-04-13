@@ -18,7 +18,6 @@ adrift: main.o draw.o common.o io.o calc.o timer.o config.o
 
 splitters/sar_split: splitters/sar_split.o
 	$(CC) -o $@ $^ $(LDFLAGS)
-	sudo setcap cap_sys_ptrace=eip $@
 
 %.o: %.c $(HDRS)
 	$(CC) -c -o $@ $< $(CFLAGS)
