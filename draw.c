@@ -8,7 +8,6 @@
 #include <stdlib.h>
 
 #define TEXT_PAD 3
-#define TIMER_PRECISION 3
 
 // To stop the timer position doing weird things, we assume the width of
 // digits is constant
@@ -29,14 +28,40 @@ int get_approx_time_width(struct state *s, const char *str) {
 	return ext.width;
 }
 
-const char *format_time(uint64_t total, char prefix, bool long_format) {
+const char *format_time(uint64_t total, char prefix, int prec) {
 	if (total == UINT64_MAX) return "-";
 
 	static char buf[64];
 
-	total /= 1000;
-	uint64_t ms = total % 1000;
-	total /= 1000;
+	// The logic for calculating frac is pretty simple but it's still
+	// easier to just switch on the precision
+	uint64_t frac;
+	switch (prec) {
+	case 0:
+		frac = 0;
+		break;
+	case 1:
+		frac = (total / 100000) % 10;
+		break;
+	case 2:
+		frac = (total / 10000) % 100;
+		break;
+	case 3:
+		frac = (total / 1000) % 1000;
+		break;
+	case 4:
+		frac = (total / 100) % 10000;
+		break;
+	case 5:
+		frac = (total / 10) % 100000;
+		break;
+	case 6:
+	default:
+		frac = total % 1000000;
+		break;
+	}
+
+	total /= 1000000;
 	uint64_t secs = total % 60;
 	total /= 60;
 	uint64_t mins = total % 60;
@@ -51,16 +76,12 @@ const char *format_time(uint64_t total, char prefix, bool long_format) {
 		--bufsz;
 	}
 
-	if (hrs && long_format) {
-		snprintf(ptr, bufsz, "%"PRIu64":%02"PRIu64":%02"PRIu64".%0*"PRIu64, hrs, mins, secs, TIMER_PRECISION, ms);
-	} else if (hrs) {
-		snprintf(ptr, bufsz, "%"PRIu64":%02"PRIu64":%02"PRIu64, hrs, mins, secs);
-	} else if (mins && long_format) {
-		snprintf(ptr, bufsz, "%"PRIu64":%02"PRIu64".%0*"PRIu64, mins, secs, TIMER_PRECISION, ms);
+	if (hrs) {
+		snprintf(ptr, bufsz, "%"PRIu64":%02"PRIu64":%02"PRIu64".%0*"PRIu64, hrs, mins, secs, prec, frac);
 	} else if (mins) {
-		snprintf(ptr, bufsz, "%"PRIu64":%02"PRIu64, mins, secs);
+		snprintf(ptr, bufsz, "%"PRIu64":%02"PRIu64".%0*"PRIu64, mins, secs, prec, frac);
 	} else {
-		snprintf(ptr, bufsz, "%"PRIu64".%0*"PRIu64, secs, TIMER_PRECISION, ms);
+		snprintf(ptr, bufsz, "%"PRIu64".%0*"PRIu64, secs, prec, frac);
 	}
 
 	return buf;
@@ -128,15 +149,15 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 			if (comparison != UINT64_MAX) {
 				// There's a comparison, but no current time - draw comparison
 				cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
-				draw_text(s, format_time(comparison, 0, false), w, h, y, false, ALIGN_RIGHT, 0);
+				draw_text(s, format_time(comparison, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
 			}
 			// No time at all - draw nothing
 		} else {
 			// There's a time for the current run
 			const char *delta = "-";
 			if (comparison != UINT64_MAX) {
-				if (cur < comparison) delta = format_time(comparison - cur, '-', false);
-				else delta = format_time(cur - comparison, '+', false);
+				if (cur < comparison) delta = format_time(comparison - cur, '-', 2);
+				else delta = format_time(cur - comparison, '+', 2);
 			}
 
 			float r = 1.0f, g = 1.0f, b = 1.0f;
@@ -160,7 +181,7 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 			draw_text(s, delta, w, h, y, false, ALIGN_RIGHT, 65);
 
 			cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
-			draw_text(s, format_time(cur, 0, false), w, h, y, false, ALIGN_RIGHT, 0);
+			draw_text(s, format_time(cur, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
 		}
 
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
@@ -187,12 +208,12 @@ void draw_widget(struct state *s, enum widget_type t, int w, int h, int *y) {
 	case WIDGET_TIMER:
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
 		cairo_set_font_size(s->cr, 26.0f);
-		draw_text(s, format_time(s->timer, 0, true), w, h, y, true, ALIGN_RIGHT_TIME, 0);
+		draw_text(s, format_time(s->timer, 0, 3), w, h, y, true, ALIGN_RIGHT_TIME, 0);
 		break;
 	case WIDGET_SPLIT_TIMER:
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
 		cairo_set_font_size(s->cr, 24.0f);
-		draw_text(s, format_time(s->split_time, 0, true), w, h, y, true, ALIGN_RIGHT_TIME, 0);
+		draw_text(s, format_time(s->split_time, 0, 3), w, h, y, true, ALIGN_RIGHT_TIME, 0);
 		break;
 	case WIDGET_SPLITS:
 		draw_splits(s, w, h, y, 0, s->splits, s->nsplits);
@@ -201,13 +222,13 @@ void draw_widget(struct state *s, enum widget_type t, int w, int h, int *y) {
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
 		cairo_set_font_size(s->cr, 17.0f);
 		draw_text(s, "Sum of best:", w, h, y, false, ALIGN_LEFT, 0);
-		draw_text(s, format_time(calc_sum_of_best(s), 0, true), w, h, y, true, ALIGN_RIGHT, 0);
+		draw_text(s, format_time(calc_sum_of_best(s), 0, 3), w, h, y, true, ALIGN_RIGHT, 0);
 		break;
 	case WIDGET_BEST_POSSIBLE_TIME:
 		cairo_set_source_rgba(s->cr, 1, 1, 1, 1);
 		cairo_set_font_size(s->cr, 17.0f);
 		draw_text(s, "Best possible time:", w, h, y, false, ALIGN_LEFT, 0);
-		draw_text(s, format_time(calc_best_possible_time(s), 0, true), w, h, y, true, ALIGN_RIGHT, 0);
+		draw_text(s, format_time(calc_best_possible_time(s), 0, 3), w, h, y, true, ALIGN_RIGHT, 0);
 		break;
 	}
 }
