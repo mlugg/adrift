@@ -2,9 +2,57 @@
 
 A simple, lightweight speedrun timer for Linux.
 
-## Dependencies
+## Building
+
+adrift is built using GNU Make. After installing its dependencies,
+simply run `make` in the source tree to build the `adrift` binary. This
+binary is standalone and can be installed to an appropriate location.
+
+### Dependencies
 
 adrift depends on [vtk](https://github.com/vktec/vtk) for its GUI.
+
+## Usage
+
+	adrift [directory]
+
+adrift will look for and store all configuaration files, run
+information, etc in the given directory, or, if none was given, the
+current working directory. All files used by adrift are UTF-8 and use LF
+line endings.
+
+When adrift starts, a file named `splits` wil be read, which contains
+the split names, each on their own line. Subsplits can be created by
+indenting splits with tabs as follows:
+
+	Chapter 1
+		Map 1
+		Map 2
+	Chapter 2
+		Map 3
+		Map 4
+
+adrift will also execute the file named `splitter`. This should be an
+executable file which outputs a rift data stream on stdout for splitting
+(see the Autosplitting section below).
+
+## Configuration
+
+When it starts, adrift will attempt to read a file named `config`. Each
+line of this file is a string key, followed by any amount of whitespace
+(excluding newlines), and a corresponding string value. A keys prefixed
+with `col_` configures a color: its value should be a color code in the
+form `RRGGBB` or `RRGGBBAA`, optionally with a leading `#` (the alpha
+component is assumed to be `FF` if not given). The following
+configuration keys currently exist:
+
+- `col_background`
+- `col_text`
+- `col_timer`
+- `col_active_split`
+- `col_split_gold`
+- `col_split_ahead`
+- `col_split_behind`
 
 ## Autosplitting
 
