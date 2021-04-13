@@ -1,7 +1,4 @@
 *.o
 adrift
-splits
-golds
-pb
-runs/
-splitter
+splitters/*.o
+splitters/sar_splitter
