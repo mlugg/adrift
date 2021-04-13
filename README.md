@@ -59,3 +59,10 @@ configuration keys currently exist:
 Autosplitters are communicated with via the [rift
 protocol](https://github.com/vktec/rift/blob/master/protocol.md). Any
 rift-compliant autosplitter should work with adrift.
+
+Included in the repo is an autosplitter which interfaces with
+[SAR](https://github.com/Blenderiste09/SourceAutoRecord). This splitter
+requires ptrace privileges to work, as it must read Portal 2's memory.
+These can be given by running the following command as root:
+
+	setcap cap_sys_ptrace=eip ./splitter
