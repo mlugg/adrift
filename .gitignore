@@ -1,4 +1,4 @@
 *.o
 adrift
 splitters/*.o
-splitters/sar_splitter
+splitters/sar_split
