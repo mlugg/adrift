@@ -1,9 +1,11 @@
+#include <fcntl.h>
+#include <limits.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <limits.h>
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdatomic.h>
 #include <signal.h>
 #include <unistd.h>
 
@@ -12,7 +14,7 @@
 #include "io.h"
 #include "timer.h"
 
-static atomic_int _g_splitter_fd = -1;
+static atomic_bool _g_should_exit;
 
 static vtk_window _g_win;
 
@@ -33,8 +35,6 @@ static int input_main(void *u) {
 		exit(1);
 	}
 
-	_g_splitter_fd = pipefd[0];
-
 	pid_t pid = 0;
 
 	pid = fork();
@@ -51,22 +51,37 @@ static int input_main(void *u) {
 	}
 
 	// Parent
+
 	close(pipefd[1]);
+
+	int fl = fcntl(pipefd[0], F_GETFL);
+	if (fl == -1) fl = 0;
+	fcntl(pipefd[0], F_SETFL, fl | O_NONBLOCK);
 
 	FILE *f = fdopen(pipefd[0], "r");
 
-	while (true) {
-		char *line = NULL;
-		size_t n = 0;
-		if (getline(&line, &n, f) == -1) {
+	struct pollfd fds[] = {
+		{ pipefd[0], POLLIN },
+	};
+
+	while (!_g_should_exit) {
+		// Use poll rather than getline directly; that way, we can routinely
+		// check if we should exit
+		if (poll(fds, sizeof fds / sizeof fds[0], 500) > 0) {
+			char *line = NULL;
+			size_t n = 0;
+			if (getline(&line, &n, f) == -1) {
+				free(line);
+				break;
+			}
+			line[strlen(line) - 1] = 0; // Remove newline
+			timer_parse(s, line);
 			free(line);
-			break;
+			vtk_window_trigger_update(s->win);
 		}
-		line[strlen(line) - 1] = 0; // Remove newline
-		timer_parse(s, line);
-		free(line);
-		vtk_window_trigger_update(s->win);
 	}
+
+	close(pipefd[0]);
 
 	if (pid) {
 		kill(pid, SIGINT);
@@ -184,9 +199,7 @@ int main(int argc, char **argv) {
 	vtk_window_destroy(win);
 	vtk_destroy(vtk);
 
-	if (_g_splitter_fd >= 0) {
-		close(_g_splitter_fd);
-	}
+	_g_should_exit = true;
 
 	thrd_join(inp_thrd, NULL);
 
