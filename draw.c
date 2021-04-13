@@ -153,7 +153,7 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 		if (cur == UINT64_MAX) {
 			if (comparison != UINT64_MAX) {
 				// There's a comparison, but no current time - draw comparison
-				set_color_cfg(s, "col_split_time", 1.0, 1.0, 1.0, 1.0);
+				set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 				draw_text(s, format_time(comparison, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
 			}
 			// No time at all - draw nothing
@@ -174,12 +174,12 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 					set_color_cfg(s, "col_split_behind", 1.0, 0.2, 0.2, 1.0);
 				}
 			} else {
-				set_color_cfg(s, "col_split_time", 1.0, 1.0, 1.0, 1.0);
+				set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 			}
 
 			draw_text(s, delta, w, h, y, false, ALIGN_RIGHT, 65);
 
-			set_color_cfg(s, "col_split_time", 1.0, 1.0, 1.0, 1.0);
+			set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 			draw_text(s, format_time(cur, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
 		}
 
