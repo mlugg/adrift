@@ -49,6 +49,8 @@ configuration keys currently exist:
 - `col_background`
 - `col_text`
 - `col_timer`
+- `col_timer_ahead`
+- `col_timer_behind`
 - `col_active_split`
 - `col_split_gold`
 - `col_split_ahead`

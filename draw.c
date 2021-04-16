@@ -206,11 +206,36 @@ void draw_widget(struct state *s, enum widget_type t, int w, int h, int *y) {
 		break;
 	case WIDGET_TIMER:
 		set_color_cfg(s, "col_timer", 1.0, 1.0, 1.0, 1.0);
+		if (s->active_split != -1) {
+			struct times times = get_split_times(get_split_by_id(s, s->active_split));
+			uint64_t comparison = get_comparison(s, times);
+			if (s->timer < comparison) {
+				set_color_cfg(s, "col_timer_ahead", 1.0, 1.0, 1.0, 1.0);
+			} else {
+				set_color_cfg(s, "col_timer_behind", 1.0, 1.0, 1.0, 1.0);
+			}
+		}
 		cairo_set_font_size(s->cr, 26.0f);
 		draw_text(s, format_time(s->timer, 0, 3), w, h, y, true, ALIGN_RIGHT_TIME, 0);
 		break;
 	case WIDGET_SPLIT_TIMER:
 		set_color_cfg(s, "col_timer", 1.0, 1.0, 1.0, 1.0);
+		if (s->active_split != -1) {
+			struct times times = get_split_times(get_split_by_id(s, s->active_split));
+			uint64_t comparison = get_comparison(s, times);
+
+			uint64_t prev_comparison = 0;
+			if (s->active_split > 0) {
+				struct times prev_times = get_split_times(get_split_by_id(s, s->active_split-1));
+				prev_comparison = get_comparison(s, prev_times);
+			}
+
+			if (s->split_time < comparison - prev_comparison) {
+				set_color_cfg(s, "col_timer_ahead", 1.0, 1.0, 1.0, 1.0);
+			} else {
+				set_color_cfg(s, "col_timer_behind", 1.0, 1.0, 1.0, 1.0);
+			}
+		}
 		cairo_set_font_size(s->cr, 24.0f);
 		draw_text(s, format_time(s->split_time, 0, 3), w, h, y, true, ALIGN_RIGHT_TIME, 0);
 		break;
