@@ -151,7 +151,8 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 		}
 
 		// For the active split, we want to display the delta as soon as it goes over gold
-		if (active && (s->split_time > times.best)) {
+		bool dyn_delta = active && (s->split_time > times.best);
+		if (dyn_delta) {
 			cur = s->timer;
 		}
 
@@ -182,10 +183,14 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 				set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 			}
 
-			draw_text(s, delta, w, h, y, false, ALIGN_RIGHT, 65);
+			draw_text(s, delta, w, h, y, false, ALIGN_RIGHT_TIME, 65);
 
 			set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
-			draw_text(s, format_time(cur, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
+			if (dyn_delta) {
+				draw_text(s, format_time(comparison, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
+			} else {
+				draw_text(s, format_time(cur, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
+			}
 		}
 
 		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
