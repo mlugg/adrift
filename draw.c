@@ -150,36 +150,41 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 			cairo_fill(s->cr);
 		}
 
-		if (cur == UINT64_MAX) {
-			if (comparison != UINT64_MAX) {
-				// There's a comparison, but no current time - draw comparison
-				set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
-				draw_text(s, format_time(comparison, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
-			}
-			// No time at all - draw nothing
-		} else {
-			// There's a time for the current run
-			const char *delta = "-";
-			if (comparison != UINT64_MAX) {
-				if (cur < comparison) delta = format_time(comparison - cur, '-', 2);
-				else delta = format_time(cur - comparison, '+', 2);
-			}
+		// For the active split, we want to display the delta as soon as it goes over gold
+		if (active && (s->split_time > times.best)) {
+			cur = s->timer;
+		}
 
-			if (times.golded_this_run && !splits[i].is_group) {
-				set_color_cfg(s, "col_split_gold", 1.0, 0.9, 0.3, 1.0);
-			} else if (comparison != UINT64_MAX) {
-				if (cur < comparison) {
-					set_color_cfg(s, "col_split_ahead", 0.2, 1.0, 0.2, 1.0);
-				} else {
-					set_color_cfg(s, "col_split_behind", 1.0, 0.2, 0.2, 1.0);
-				}
+		// If there's an active comparison *and* a current split time, find
+		// the delta
+		const char *delta = "-";
+		if (cur == UINT64_MAX && comparison == UINT64_MAX) {
+				delta = "";
+		} else if (cur != UINT64_MAX && comparison != UINT64_MAX) {
+			if (cur < comparison) delta = format_time(comparison - cur, '-', 2);
+			else delta = format_time(cur - comparison, '+', 2);
+		}
+
+		if (times.golded_this_run && !splits[i].is_group) {
+			set_color_cfg(s, "col_split_gold", 1.0, 0.9, 0.3, 1.0);
+		} else if (cur != UINT64_MAX && comparison != UINT64_MAX) {
+			if (cur < comparison) {
+				set_color_cfg(s, "col_split_ahead", 0.2, 1.0, 0.2, 1.0);
 			} else {
-				set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
+				set_color_cfg(s, "col_split_behind", 1.0, 0.2, 0.2, 1.0);
 			}
-
-			draw_text(s, delta, w, h, y, false, ALIGN_RIGHT, 65);
-
+		} else {
 			set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
+		}
+
+		draw_text(s, delta, w, h, y, false, ALIGN_RIGHT_TIME, 65);
+
+		// For splits before active, draw the time obtained
+		// For splits after, draw the comparison
+		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
+		if (splits[i].split.id >= s->active_split) {
+			draw_text(s, format_time(comparison, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
+		} else {
 			draw_text(s, format_time(cur, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
 		}
 
