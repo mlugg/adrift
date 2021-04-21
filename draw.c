@@ -150,6 +150,11 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 			cairo_fill(s->cr);
 		}
 
+		// For the active split, we want to display the delta as soon as it goes over gold
+		if (active && (s->split_time > times.best)) {
+			cur = s->timer;
+		}
+
 		if (cur == UINT64_MAX) {
 			if (comparison != UINT64_MAX) {
 				// There's a comparison, but no current time - draw comparison
