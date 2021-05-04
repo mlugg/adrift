@@ -73,6 +73,7 @@ struct state {
 };
 
 struct split *get_split_by_id(struct state *s, unsigned id);
+unsigned get_split_id(struct split *sp);
 struct split *get_final_split(struct state *s);
 struct times get_split_times(struct split *sp);
 uint64_t get_comparison(struct state *s, struct times t);

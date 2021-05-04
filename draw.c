@@ -182,7 +182,7 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 		// For splits before active, draw the time obtained
 		// For splits after, draw the comparison
 		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
-		if (splits[i].split.id >= s->active_split) {
+		if (get_split_id(&splits[i]) >= s->active_split) {
 			draw_text(s, format_time(comparison, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
 		} else {
 			draw_text(s, format_time(cur, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);

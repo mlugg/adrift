@@ -27,6 +27,11 @@ static struct split *_get_final_split(struct split *splits, size_t nsplits) {
 	}
 }
 
+unsigned get_split_id(struct split *sp) {
+	sp = _get_final_split(sp, 1);
+	return sp->split.id;
+}
+
 struct split *get_final_split(struct state *s) {
 	return _get_final_split(s->splits, s->nsplits);
 }
