@@ -145,7 +145,7 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 		bool active = !splits[i].is_group && splits[i].split.id == s->active_split;
 
 		if (active) {
-			set_color_cfg(s, "col_active_split", 1.0, 0.0, 0.0, 1.0);
+			set_color_cfg(s, "col_active_split", 0.3, 0.5, 0.8, 1.0);
 			cairo_rectangle(s->cr, 0, *y, w, get_font_height(s) + 2 * TEXT_PAD);
 			cairo_fill(s->cr);
 		}
