@@ -34,3 +34,9 @@ done:
 	*a = ai / 255.0f;
 	return true;
 }
+
+const char *config_get_str(struct cfgdict *cfg, const char *k, const char *def) {
+	char *ret = (char *)def;
+	cfgdict_get(cfg, (char *)k, &ret);
+	return ret;
+}

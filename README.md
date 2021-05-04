@@ -46,6 +46,8 @@ form `RRGGBB` or `RRGGBBAA`, optionally with a leading `#` (the alpha
 component is assumed to be `FF` if not given). The following
 configuration keys currently exist:
 
+- `game`
+- `category`
 - `col_background`
 - `col_text`
 - `col_timer`

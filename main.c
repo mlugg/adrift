@@ -161,8 +161,8 @@ int main(int argc, char **argv) {
 		.win = win,
 		.cr = cr,
 
-		.game_name = "Portal 2",
-		.category_name = "Inbounds NoSLA",
+		.game_name = config_get_str(cfg, "game", "Portal 2"),
+		.category_name = config_get_str(cfg, "category", "Inbounds NoSLA"),
 
 		.nwidgets = sizeof widgets / sizeof widgets[0],
 		.widgets = widgets,

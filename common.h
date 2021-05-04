@@ -53,8 +53,8 @@ struct state {
 	vtk_window win;
 	cairo_t *cr;
 
-	char *game_name;
-	char *category_name;
+	const char *game_name;
+	const char *category_name;
 
 	size_t nwidgets;
 	enum widget_type *widgets;
