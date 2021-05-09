@@ -52,3 +52,8 @@ previous split names, which must be resent.
 
 	S2C
 		RECOVER <catname> <n> <us> <data>    Recovery info: inform the client that we were using category 'catname' with 'n' splits, that the timer was currently on 'us' microseconds, and that its custom recovery data was 'data'.
+
+### Exiting
+
+	C2S
+		GOODBYE                      Gracefully terminate the connection (so run recovery should not be attempted).
