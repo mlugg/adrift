@@ -35,12 +35,12 @@ static void _commit_pb(struct split *splits, size_t nsplits) {
 	}
 }
 
-static void _run_finish(struct state *s) {
-	struct split *final = get_final_split(s);
+static void _run_finish(struct client *cl) {
+	struct split *final = get_final_split(cl);
 	mkdir(RUNS_DIR, 0777);
 	char run_name[64];
-	strftime(run_name, sizeof run_name, RUNS_DIR "/%Y-%m-%d_%H.%M.%S", localtime(&s->run_started));
-	save_times(s->splits, s->nsplits, run_name, offsetof(struct times, cur));
+	strftime(run_name, sizeof run_name, RUNS_DIR "/%Y-%m-%d_%H.%M.%S", localtime(&cl->run_started));
+	save_times(cl->splits, cl->nsplits, run_name, offsetof(struct times, cur));
 	if (final->split.times.cur < final->split.times.pb) {
 		unlink("pb");
 		symlink(run_name, "pb");
@@ -58,100 +58,55 @@ static void _clear_cur(struct split *splits, size_t nsplits) {
 	}
 }
 
-void update_expanded(struct state *s) {
-	_update_expanded(s->active_split, s->splits, s->nsplits);
+void update_expanded(struct client *cl) {
+	_update_expanded(cl->active_split, cl->splits, cl->nsplits);
 }
 
-void timer_begin(struct state *s) {
-	s->active_split = 0;
-	s->run_started = time(NULL);
-	update_expanded(s);
+void timer_start(struct client *cl) {
+	cl->active_split = 0;
+	cl->run_started = time(NULL);
+	update_expanded(cl);
 }
 
-void timer_reset(struct state *s) {
-	if (s->active_split == -1) {
-		struct split *final = get_final_split(s);
+void timer_reset(struct client *cl) {
+	if (cl->active_split == -1) {
+		struct split *final = get_final_split(cl);
 		if (final->split.times.cur < final->split.times.pb) {
-			_commit_pb(s->splits, s->nsplits);
+			_commit_pb(cl->splits, cl->nsplits);
 		}
 	}
-	_clear_cur(s->splits, s->nsplits);
-	s->active_split = -1;
-	update_expanded(s);
+	_clear_cur(cl->splits, cl->nsplits);
+	cl->active_split = -1;
+	update_expanded(cl);
 }
 
-void timer_split(struct state *s) {
-	if (s->active_split == -1) return;
+void timer_split(struct client *cl) {
+	if (cl->active_split == -1) return;
 
-	struct split *sp = get_split_by_id(s, s->active_split);
-	sp->split.times.cur = s->timer;
+	struct split *sp = get_split_by_id(cl, cl->active_split);
+	sp->split.times.cur = cl->timer;
 
-	if (s->split_time < sp->split.times.best) {
-		sp->split.times.best = s->split_time;
+	if (cl->split_time < sp->split.times.best) {
+		sp->split.times.best = cl->split_time;
 		sp->split.times.golded_this_run = true;
 	}
 
-	if (sp == get_final_split(s)) {
-		s->active_split = -1;
-		_run_finish(s);
+	if (sp == get_final_split(cl)) {
+		cl->active_split = -1;
+		_run_finish(cl);
 	} else {
-		s->active_split++;
+		cl->active_split++;
 	}
 
-	update_expanded(s);
+	update_expanded(cl);
 }
 
-static void update_time(struct state *s, uint64_t time) {
+void timer_update(struct client *cl, uint64_t time) {
 	uint64_t prev = 0;
-	if (s->active_split > 0) {
-		prev = get_split_by_id(s, s->active_split - 1)->split.times.cur;
+	if (cl->active_split > 0) {
+		prev = get_split_by_id(cl, cl->active_split - 1)->split.times.cur;
 	}
 
-	s->timer = time;
-	s->split_time = time - prev;
-}
-
-void timer_parse(struct state *s, const char *str) {
-	char *end;
-	long us = strtol(str, &end, 10);
-
-	if (end == str) {
-		goto err;
-	}
-
-	bool updated = false;
-
-	if (end[0] == ' ') {
-		++end;
-		if (!strcmp(end, "BEGIN")) {
-			timer_reset(s);
-			update_time(s, us);
-			timer_begin(s);
-			updated = true;
-		} else if (!strcmp(end, "RESET")) {
-			timer_reset(s);
-			update_time(s, us);
-			updated = true;
-		} else if (!strcmp(end, "SPLIT")) {
-			if (s->active_split != -1) {
-				update_time(s, us);
-				timer_split(s);
-				updated = true;
-			}
-		} else if (end[0] != '\0') {
-			goto err;
-		}
-	} else if (end[0] != '\0') {
-		goto err;
-	}
-
-	if (!updated && s->active_split != -1) {
-		update_time(s, us);
-	}
-
-	return;
-
-err:
-	fprintf(stderr, "Warning: bad splitter data! Got line '%s'\n", str);
-	return;
+	cl->timer = time;
+	cl->split_time = time - prev;
 }

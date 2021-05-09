@@ -8,6 +8,7 @@
 #include <threads.h>
 #include <time.h>
 #include "config.h"
+#include "vstring.h"
 
 enum widget_type {
 	WIDGET_GAME_NAME,
@@ -32,7 +33,7 @@ struct times {
 };
 
 struct split {
-	char *name;
+	vstring name;
 	bool is_group;
 
 	union {
@@ -49,31 +50,46 @@ struct split {
 	};
 };
 
+struct client {
+	int fd;
+
+	vstring game_name;
+	vstring game_name_hr;
+
+	vstring cat_name;
+	vstring cat_name_hr;
+
+	struct split *splits;
+	size_t nsplits;
+
+	int active_split;
+	uint64_t timer;
+	uint64_t split_time;
+	time_t run_started;
+
+	void *recovery;
+	size_t recovery_len;
+
+	bool graceful_term;
+};
+
 struct state {
 	vtk_window win;
 	cairo_t *cr;
 
-	char *game_name;
-	char *category_name;
-
 	size_t nwidgets;
 	enum widget_type *widgets;
 
-	size_t nsplits;
-	struct split *splits;
-
-	int active_split;
-
-	uint64_t timer;
-	uint64_t split_time;
-
-	time_t run_started;
-
 	struct cfgdict *cfg;
+
+	struct client *clients;
+	size_t nclients;
+
+	struct client *cur_client;
 };
 
-struct split *get_split_by_id(struct state *s, unsigned id);
-struct split *get_final_split(struct state *s);
+struct split *get_split_by_id(struct client *cl, unsigned id);
+struct split *get_final_split(struct client *cl);
 struct times get_split_times(struct split *sp);
 uint64_t get_comparison(struct state *s, struct times t);
 void free_splits(struct split *splits, size_t nsplits);

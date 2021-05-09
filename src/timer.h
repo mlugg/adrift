@@ -1,11 +1,12 @@
 #ifndef TIMER_H
 #define TIMER_H
 
+#include <stdint.h>
 #include "common.h"
 
-void timer_begin(struct state *s);
-void timer_reset(struct state *s);
-void timer_split(struct state *s);
-void timer_parse(struct state *s, const char *str);
+void timer_start(struct client *cl);
+void timer_reset(struct client *cl);
+void timer_split(struct client *cl);
+void timer_update(struct client *cl, uint64_t time);
 
 #endif

@@ -14,8 +14,8 @@ static struct split *_get_split_by_id(struct split *splits, size_t nsplits, unsi
 	return NULL;
 }
 
-struct split *get_split_by_id(struct state *s, unsigned id) {
-	return _get_split_by_id(s->splits, s->nsplits, id);
+struct split *get_split_by_id(struct client *cl, unsigned id) {
+	return _get_split_by_id(cl->splits, cl->nsplits, id);
 }
 
 static struct split *_get_final_split(struct split *splits, size_t nsplits) {
@@ -27,8 +27,8 @@ static struct split *_get_final_split(struct split *splits, size_t nsplits) {
 	}
 }
 
-struct split *get_final_split(struct state *s) {
-	return _get_final_split(s->splits, s->nsplits);
+struct split *get_final_split(struct client *cl) {
+	return _get_final_split(cl->splits, cl->nsplits);
 }
 
 struct times get_split_times(struct split *sp) {
@@ -45,7 +45,7 @@ uint64_t get_comparison(struct state *s, struct times t) {
 
 void free_splits(struct split *splits, size_t nsplits) {
 	for (size_t i = 0; i < nsplits; ++i) {
-		free(splits[i].name);
+		vs_free(splits[i].name);
 		if (splits[i].is_group) {
 			free_splits(splits[i].group.splits, splits[i].group.nsplits);
 		}

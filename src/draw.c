@@ -142,7 +142,7 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 		uint64_t comparison = get_comparison(s, times);
 		uint64_t cur = times.cur;
 
-		bool active = !splits[i].is_group && splits[i].split.id == s->active_split;
+		bool active = !splits[i].is_group && splits[i].split.id == s->cur_client->active_split;
 
 		if (active) {
 			set_color_cfg(s, "col_active_split", 1.0, 0.0, 0.0, 1.0);
@@ -151,8 +151,8 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 		}
 
 		// For the active split, we want to display the delta as soon as it goes over gold
-		if (active && (s->split_time > times.best)) {
-			cur = s->timer;
+		if (active && (s->cur_client->split_time > times.best)) {
+			cur = s->cur_client->timer;
 		}
 
 		// If there's an active comparison *and* a current split time, find
@@ -182,7 +182,7 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 		// For splits before active, draw the time obtained
 		// For splits after, draw the comparison
 		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
-		if (splits[i].split.id >= s->active_split) {
+		if (splits[i].split.id >= s->cur_client->active_split) {
 			draw_text(s, format_time(comparison, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
 		} else {
 			draw_text(s, format_time(cur, 0, 2), w, h, y, false, ALIGN_RIGHT, 0);
@@ -202,62 +202,62 @@ void draw_widget(struct state *s, enum widget_type t, int w, int h, int *y) {
 	case WIDGET_GAME_NAME:
 		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 		cairo_set_font_size(s->cr, 23.0f);
-		draw_text(s, s->game_name, w, h, y, true, ALIGN_CENTER, 0);
+		draw_text(s, s->cur_client->game_name_hr, w, h, y, true, ALIGN_CENTER, 0);
 		break;
 	case WIDGET_CATEGORY_NAME:
 		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 		cairo_set_font_size(s->cr, 16.0f);
-		draw_text(s, s->category_name, w, h, y, true, ALIGN_CENTER, 0);
+		draw_text(s, s->cur_client->cat_name_hr, w, h, y, true, ALIGN_CENTER, 0);
 		break;
 	case WIDGET_TIMER:
 		set_color_cfg(s, "col_timer", 1.0, 1.0, 1.0, 1.0);
-		if (s->active_split != -1) {
-			struct times times = get_split_times(get_split_by_id(s, s->active_split));
+		if (s->cur_client->active_split != -1) {
+			struct times times = get_split_times(get_split_by_id(s->cur_client, s->cur_client->active_split));
 			uint64_t comparison = get_comparison(s, times);
-			if (s->timer < comparison) {
+			if (s->cur_client->timer < comparison) {
 				set_color_cfg(s, "col_timer_ahead", 1.0, 1.0, 1.0, 1.0);
 			} else {
 				set_color_cfg(s, "col_timer_behind", 1.0, 1.0, 1.0, 1.0);
 			}
 		}
 		cairo_set_font_size(s->cr, 26.0f);
-		draw_text(s, format_time(s->timer, 0, 3), w, h, y, true, ALIGN_RIGHT_TIME, 0);
+		draw_text(s, format_time(s->cur_client->timer, 0, 3), w, h, y, true, ALIGN_RIGHT_TIME, 0);
 		break;
 	case WIDGET_SPLIT_TIMER:
 		set_color_cfg(s, "col_timer", 1.0, 1.0, 1.0, 1.0);
-		if (s->active_split != -1) {
-			struct times times = get_split_times(get_split_by_id(s, s->active_split));
+		if (s->cur_client->active_split != -1) {
+			struct times times = get_split_times(get_split_by_id(s->cur_client, s->cur_client->active_split));
 			uint64_t comparison = get_comparison(s, times);
 
 			uint64_t prev_comparison = 0;
-			if (s->active_split > 0) {
-				struct times prev_times = get_split_times(get_split_by_id(s, s->active_split-1));
+			if (s->cur_client->active_split > 0) {
+				struct times prev_times = get_split_times(get_split_by_id(s->cur_client, s->cur_client->active_split-1));
 				prev_comparison = get_comparison(s, prev_times);
 			}
 
-			if (s->split_time < comparison - prev_comparison) {
+			if (s->cur_client->split_time < comparison - prev_comparison) {
 				set_color_cfg(s, "col_timer_ahead", 1.0, 1.0, 1.0, 1.0);
 			} else {
 				set_color_cfg(s, "col_timer_behind", 1.0, 1.0, 1.0, 1.0);
 			}
 		}
 		cairo_set_font_size(s->cr, 24.0f);
-		draw_text(s, format_time(s->split_time, 0, 3), w, h, y, true, ALIGN_RIGHT_TIME, 0);
+		draw_text(s, format_time(s->cur_client->split_time, 0, 3), w, h, y, true, ALIGN_RIGHT_TIME, 0);
 		break;
 	case WIDGET_SPLITS:
-		draw_splits(s, w, h, y, 0, s->splits, s->nsplits);
+		draw_splits(s, w, h, y, 0, s->cur_client->splits, s->cur_client->nsplits);
 		break;
 	case WIDGET_SUM_OF_BEST:
 		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 		cairo_set_font_size(s->cr, 17.0f);
 		draw_text(s, "Sum of best:", w, h, y, false, ALIGN_LEFT, 0);
-		draw_text(s, format_time(calc_sum_of_best(s), 0, 3), w, h, y, true, ALIGN_RIGHT, 0);
+		draw_text(s, format_time(calc_sum_of_best(s->cur_client), 0, 3), w, h, y, true, ALIGN_RIGHT, 0);
 		break;
 	case WIDGET_BEST_POSSIBLE_TIME:
 		set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 		cairo_set_font_size(s->cr, 17.0f);
 		draw_text(s, "Best possible time:", w, h, y, false, ALIGN_LEFT, 0);
-		draw_text(s, format_time(calc_best_possible_time(s), 0, 3), w, h, y, true, ALIGN_RIGHT, 0);
+		draw_text(s, format_time(calc_best_possible_time(s->cur_client), 0, 3), w, h, y, true, ALIGN_RIGHT, 0);
 		break;
 	}
 }
@@ -271,6 +271,8 @@ void draw_handler(vtk_event ev, void *u) {
 	cairo_rectangle(s->cr, 0, 0, w, h);
 	set_color_cfg(s, "col_background", 0.0, 0.0, 0.0, 0.0);
 	cairo_fill(s->cr);
+
+	if (!s->cur_client) return;
 
 	int y = 0;
 
