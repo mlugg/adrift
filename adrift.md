@@ -22,8 +22,23 @@ The following describes **protocol version 0.1**.
 ### General
 
 	C2S
-		GAME <name> <hr>             Update the name and human-readable name of this game. NOTE: 'name' may not contain whitespace.
-		CAT <name> <hr>              Update the active category and its human-readable name. NOTE: 'name' may not contain whitespace.
+		GAME <name> <hr>             Update the name and human-readable name of this game. 'name' may not contain whitespace.
+		CAT <name> <hr>              Update the active category and its human-readable name. 'hr' is optional; if not passed, the server will try and get the human-readable name from its list of known categories. 'name' may not contain whitespace.
+
+### Categories
+
+A client may tell the server about its available categories. A change to the
+list of available categories is not performed until a COMMITCATS message is
+sent.
+
+	C2S
+		ADDCAT <name> <hr>           Add an available category with the given name and human-readable name.
+		DELCAT <name>                Remove the existing available category with the given name.
+		CLEARCATS                    Clear the list of available categories.
+		COMMITCATS                   Apply the changes to the available category list.
+
+	S2C
+		CAT <name>                   Request a switch to the given available category. Clients are not required to obey this request; if they do, they will send C2S CAT as normal.
 
 ### Timer
 
@@ -32,6 +47,11 @@ The following describes **protocol version 0.1**.
 		SYNC <us>                    Update the timer to 'us' microseconds. Effective regardless of whether the timer is already running.
 		SPLIT <us>                   Perform a split on the current run at 'us' microseconds. If this is the last split, finish the run at 'us' microseconds. Only effective if a run is active.
 		RESET <us>                   Reset the current run, setting the timer back to 'us' microseconds and stopping it.
+
+	S2C
+		START                        Request a client to start a run via C2S START. Clients must obey this request (even if a run is active).
+		SPLIT                        Request a client to split via C2S SPLIT. Clients must obey this request.
+		RESET                        Request a client to reset a run via C2S RESET. Clients must obey this request.
 
 ### Split communication
 
@@ -51,6 +71,7 @@ previous split names, which must be resent.
 		RECOVERAPPEND <data>         Append data to the end of the client's custom recovery data.
 
 	S2C
+		NORECOVER                            Recovery info: inform the client no run recovery is necessary (the last connection terminated gracefully).
 		RECOVER <catname> <n> <us> <data>    Recovery info: inform the client that we were using category 'catname' with 'n' splits, that the timer was currently on 'us' microseconds, and that its custom recovery data was 'data'.
 
 ### Exiting
