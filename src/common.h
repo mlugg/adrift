@@ -5,10 +5,19 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <threads.h>
 #include <time.h>
 #include "config.h"
 #include "vstring.h"
+
+#ifdef NDEBUG
+#define unreachable do { } while (0)
+#else
+#define _str(x) _str1(x)
+#define _str1(x) #x
+#define unreachable do { fputs(__FILE__ ":" _str(__LINE__) ": hit supposedly unreachable code\n", stderr); abort(); } while (0)
+#endif
 
 enum widget_type {
 	WIDGET_GAME_NAME,
@@ -50,6 +59,13 @@ struct split {
 	};
 };
 
+struct category {
+	vstring name;
+	vstring name_hr;
+	bool committed;
+	bool uncommitted;
+};
+
 struct client {
 	int fd;
 
@@ -71,6 +87,9 @@ struct client {
 	size_t recovery_len;
 
 	bool graceful_term;
+
+	size_t n_avail_cats;
+	struct category *avail_cats;
 };
 
 struct state {

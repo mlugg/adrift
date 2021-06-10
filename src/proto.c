@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "common.h"
+#include "client.h"
 #include "timer.h"
 #define VSTRING_IMPL
 #include "vstring.h"
@@ -19,11 +20,10 @@ static inline long _parse_uint(const char *str) {
 }
 
 static void _c2s_hello(struct client *cl, size_t argc, const char *const *argv) {
-	printf("got hello\n");
 	for (size_t i = 1; i < argc; ++i) {
 		if (!strcmp(argv[i], PROTO_VERSION)) {
-	printf("repsonded\n");
-			write(cl->fd, "HELLO " PROTO_VERSION, sizeof ("HELLO " PROTO_VERSION));
+			write(cl->fd, "HELLO " PROTO_VERSION "\n", sizeof ("HELLO " PROTO_VERSION "\n"));
+			write(cl->fd, "NORECOVER\n", sizeof "NORECOVER\n"); // TODO: recovery
 			return;
 		}
 	}
@@ -35,16 +35,77 @@ static void _c2s_game(struct client *cl, size_t argc, const char *const *argv) {
 	assert(argc == 3);
 	cl->game_name = vs_new(argv[1]);
 	cl->game_name_hr = vs_new(argv[2]);
-	printf("game %s '%s'\n", argv[1], argv[2]);
-	// TODO: load splits
+	client_load_splits(cl);
 }
 
 static void _c2s_cat(struct client *cl, size_t argc, const char *const *argv) {
 	assert(argc == 3);
 	cl->cat_name = vs_new(argv[1]);
 	cl->cat_name_hr = vs_new(argv[2]);
-	printf("cat %s '%s'\n", argv[1], argv[2]);
-	// TODO: load splits
+	client_load_splits(cl);
+}
+
+static void _c2s_addcat(struct client *cl, size_t argc, const char *const *argv) {
+	assert(argc == 3);
+	int n = ++cl->n_avail_cats;
+	cl->avail_cats = realloc(cl->avail_cats, n * sizeof cl->avail_cats[0]);
+	cl->avail_cats[n - 1] = (struct category){
+		.name = vs_new(argv[1]),
+		.name_hr = argv[2] && argv[2][0] ? vs_new(argv[2]) : NULL,
+		.committed = false,
+		.uncommitted = true,
+	};
+}
+
+static inline void _delete_avail_cat(struct client *cl, size_t i) {
+	size_t n = --cl->n_avail_cats;
+	vs_free(cl->avail_cats[i].name);
+	vs_free(cl->avail_cats[i].name_hr);
+	memmove(&cl->avail_cats[i], &cl->avail_cats[i + 1], (n - i) * sizeof cl->avail_cats[0]);
+	if (n == 0) {
+		free(cl->avail_cats);
+		cl->avail_cats = NULL;
+	} else {
+		cl->avail_cats = realloc(cl->avail_cats, n * sizeof cl->avail_cats[0]);
+	}
+}
+
+static void _c2s_delcat(struct client *cl, size_t argc, const char *const *argv) {
+	assert(argc == 2);
+	for (size_t i = 0; i < cl->n_avail_cats; ++i) {
+		if (!strcmp(argv[1], cl->avail_cats[i].name)) {
+			if (!cl->avail_cats[i].committed) {
+				_delete_avail_cat(cl, i);
+				--i;
+				continue;
+			}
+			cl->avail_cats[i].uncommitted = false;
+		}
+	}
+}
+
+static void _c2s_clearcats(struct client *cl, size_t argc, const char *const *argv) {
+	assert(argc == 1);
+	for (size_t i = 0; i < cl->n_avail_cats; ++i) {
+		if (!cl->avail_cats[i].committed) {
+			_delete_avail_cat(cl, i);
+			--i;
+			continue;
+		}
+		cl->avail_cats[i].uncommitted = false;
+	}
+}
+
+static void _c2s_commitcats(struct client *cl, size_t argc, const char *const *argv) {
+	assert(argc == 1);
+	for (size_t i = 0; i < cl->n_avail_cats; ++i) {
+		if (!cl->avail_cats[i].uncommitted) {
+			_delete_avail_cat(cl, i);
+			--i;
+			continue;
+		}
+		cl->avail_cats[i].committed = cl->avail_cats[i].uncommitted;
+	}
 }
 
 static void _c2s_sync(struct client *cl, size_t argc, const char *const *argv) {
@@ -176,6 +237,11 @@ struct c2s_cmd g_c2s_cmds[] = {
 
 	{ "GAME", 1, true, &_c2s_game },
 	{ "CAT", 1, true, &_c2s_cat },
+
+	{ "ADDCAT", 1, true, &_c2s_addcat },
+	{ "DELCAT", 1, false, &_c2s_delcat },
+	{ "CLEARCATS", 0, false, &_c2s_clearcats },
+	{ "COMMITCATS", 0, false, &_c2s_commitcats },
 
 	{ "SYNC", 1, false, &_c2s_sync },
 	{ "START", 1, false, &_c2s_start },

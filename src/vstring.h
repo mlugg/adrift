@@ -52,6 +52,7 @@ vstring vs_append(vstring s, vstring other);
 vstring vs_append_c(vstring s, char *str);
 vstring vs_append_n(vstring s, char *buf, VSTRING_SIZE_T len);
 vstring vs_resize(vstring s, VSTRING_SIZE_T new_len);
+vstring vs_dup(vstring s);
 
 #endif // VSTRING_HDR_INCLUDED
 
@@ -149,5 +150,8 @@ vstring vs_resize(vstring s, VSTRING_SIZE_T len) {
 	return s;
 }
 
+vstring vs_dup(vstring s) {
+	return vs_new_n(s, vs_len(s));
+}
 
 #endif // VSTRING_IMPL

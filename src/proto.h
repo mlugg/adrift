@@ -12,6 +12,6 @@ struct c2s_cmd {
 	void (*callback)(struct client *cl, size_t argc, const char *const *argv);
 };
 
-extern struct c2s_cmd g_c2s_cmds[12];
+extern struct c2s_cmd g_c2s_cmds[16];
 
 #endif

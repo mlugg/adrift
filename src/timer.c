@@ -1,4 +1,5 @@
 #include "timer.h"
+#include "client.h"
 #include "io.h"
 #include <string.h>
 #include <stdlib.h>
@@ -37,14 +38,8 @@ static void _commit_pb(struct split *splits, size_t nsplits) {
 
 static void _run_finish(struct client *cl) {
 	struct split *final = get_final_split(cl);
-	mkdir(RUNS_DIR, 0777);
-	char run_name[64];
-	strftime(run_name, sizeof run_name, RUNS_DIR "/%Y-%m-%d_%H.%M.%S", localtime(&cl->run_started));
-	save_times(cl->splits, cl->nsplits, run_name, offsetof(struct times, cur));
-	if (final->split.times.cur < final->split.times.pb) {
-		unlink("pb");
-		symlink(run_name, "pb");
-	}
+	bool pb = final->split.times.cur < final->split.times.pb;
+	client_save_run(cl, pb);
 }
 
 static void _clear_cur(struct split *splits, size_t nsplits) {

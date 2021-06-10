@@ -49,16 +49,6 @@ int main(int argc, char **argv) {
 		WIDGET_SPLITS,
 	};
 
-	/*
-	if (!read_times(splits, nsplits, "pb", offsetof(struct times, pb))) {
-		fputs("Warning: could not read PB\n", stderr);
-	}
-
-	if (!read_times(splits, nsplits, "golds", offsetof(struct times, best))) {
-		fputs("Warning: could not read golds\n", stderr);
-	}
-	*/
-
 	struct cfgdict *cfg = cfgdict_new();
 	if (!read_config("config", cfg)) {
 		fputs("Warning: could not read config\n", stderr);
@@ -122,8 +112,6 @@ int main(int argc, char **argv) {
 	_g_should_exit = true;
 
 	thrd_join(inp_thrd, NULL);
-
-	//save_times(splits, nsplits, "golds", offsetof(struct times, best));
 
 	cfgdict_free(cfg);
 
