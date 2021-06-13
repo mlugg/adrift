@@ -8,6 +8,8 @@
 #include <sys/types.h>
 
 #define RUNS_DIR "runs"
+// Microseconds you have to beat gold by for it to actually register - prevents rounding issues
+#define GOLD_EPSILON 10
 
 static bool _update_expanded(int active_split, struct split *splits, size_t nsplits) {
 	bool expand = false;
@@ -86,7 +88,7 @@ void timer_split(struct state *s) {
 	struct split *sp = get_split_by_id(s, s->active_split);
 	sp->split.times.cur = s->timer;
 
-	if (s->split_time < sp->split.times.best) {
+	if (s->split_time < sp->split.times.best - GOLD_EPSILON) {
 		sp->split.times.best = s->split_time;
 		sp->split.times.golded_this_run = true;
 	}
