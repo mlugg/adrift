@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <string.h>
+#include <ctype.h>
 
 static inline size_t _count_tabs(char *line) {
 	size_t i = 0;
@@ -215,17 +216,26 @@ bool read_config(const char *path, struct cfgdict *cfg) {
 			break;
 		}
 
+		// strip trailing whitespace
+		{
+			char *end = line;
+			while (*end) ++end;
+			--end;
+			while (isspace(*end)) --end;
+			end[1] = 0;
+		}
+
 		if (n > 0) {
 			int p = -1;
-			char *k, *v;
-			int matched = sscanf(line, "%ms %ms %n", &k, &v, &p);
-			if (matched != 2 || p == -1) {
-				if (matched >= 2) free(v);
+			char *k;
+			int matched = sscanf(line, "%ms %n", &k, &p);
+			if (matched != 1 || p == -1) {
 				if (matched >= 1) free(k);
 				// TODO: clear cfg
 				fclose(f);
 				return false;
 			}
+			char *v = strdup(line + p);
 			int ret = cfgdict_put(cfg, k, v);
 			if (ret == -1) {
 				free(k);
