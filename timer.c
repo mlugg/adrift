@@ -91,6 +91,7 @@ void timer_split(struct state *s) {
 	if (s->split_time < sp->split.times.best - GOLD_EPSILON) {
 		sp->split.times.best = s->split_time;
 		sp->split.times.golded_this_run = true;
+		save_times(s->splits, s->nsplits, "golds", offsetof(struct times, best));
 	}
 
 	if (sp == get_final_split(s)) {
