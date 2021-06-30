@@ -177,7 +177,7 @@ void draw_splits(struct state *s, int w, int h, int *y, int off, struct split *s
 			set_color_cfg(s, "col_text", 1.0, 1.0, 1.0, 1.0);
 		}
 
-		draw_text(s, delta, w, h, y, false, ALIGN_RIGHT_TIME, 65);
+		draw_text(s, delta, w, h, y, false, ALIGN_RIGHT_TIME, config_get_int(s->cfg, "split_time_width", 100));
 
 		// For splits before active, draw the time obtained
 		// For splits after, draw the comparison

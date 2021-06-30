@@ -57,6 +57,9 @@ configuration keys currently exist:
 - `col_split_gold`
 - `col_split_ahead`
 - `col_split_behind`
+- `split_time_width`
+- `window_width`
+- `window_height`
 
 ## Autosplitting
 

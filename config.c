@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 bool config_get_color(struct cfgdict *cfg, const char *k, float *r, float *g, float *b, float *a) {
 	char *v;
@@ -33,6 +34,16 @@ done:
 	*b = bi / 255.0f;
 	*a = ai / 255.0f;
 	return true;
+}
+
+long config_get_int(struct cfgdict *cfg, const char *k, long def) {
+	const char *str = config_get_str(cfg, k, NULL);
+	if (!str) return def;
+	while (isspace(*str)) ++str;
+	char *end;
+	long val = strtol(str, &end, 10);
+	while (isspace(*end)) ++end;
+	return *end ? def : val;
 }
 
 const char *config_get_str(struct cfgdict *cfg, const char *k, const char *def) {

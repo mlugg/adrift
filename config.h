@@ -11,6 +11,7 @@
 #include "vdict.h"
 
 bool config_get_color(struct cfgdict *cfg, const char *k, float *r, float *g, float *b, float *a);
+long config_get_int(struct cfgdict *cfg, const char *k, long def);
 const char *config_get_str(struct cfgdict *cfg, const char *k, const char *def);
 
 #endif
