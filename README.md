@@ -15,6 +15,7 @@ adrift depends on [vtk](https://github.com/vktec/vtk) for its GUI.
 ## Usage
 
 	adrift [directory]
+*If you don't provide a valid directory with a `splits` file adrift will silently quit*
 
 adrift will look for and store all configuaration files, run
 information, etc in the given directory, or, if none was given, the
@@ -40,8 +41,17 @@ executable file which outputs a rift data stream on stdout for splitting
 
 When it starts, adrift will attempt to read a file named `config`. Each
 line of this file is a string key, followed by any amount of whitespace
-(excluding newlines), and a corresponding string value. A keys prefixed
-with `col_` configures a color: its value should be a color code in the
+(excluding newlines), and a corresponding string value. 
+
+### Example: 
+
+```
+col_background 00000000
+col_active_split #1ABC9C
+```
+
+A keys prefixed
+with `col_` configures a color: its value should be a hex code in the
 form `RRGGBB` or `RRGGBBAA`, optionally with a leading `#` (the alpha
 component is assumed to be `FF` if not given). The following
 configuration keys currently exist:
