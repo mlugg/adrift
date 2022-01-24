@@ -190,7 +190,7 @@ struct state {
 	enum timer_action last_action;
 };
 
-struct state *splitter_init(int fd) {
+struct state *splitter_init(int fd, bool initial_connect) {
 	pid_t pid = find_process();
 
 	if (pid < 0) {
@@ -223,9 +223,10 @@ struct state *splitter_init(int fd) {
 		return NULL;
 	}
 
-	uint64_t usec = (double)info.ipt * (double)info.total * 1e6;
-
-	dprintf(fd, "%lu RESET\n", usec);
+	if (initial_connect) {
+		uint64_t usec = (double)info.ipt * (double)info.total * 1e6;
+		dprintf(fd, "%lu RESET\n", usec);
+	}
 
 	return s;
 }
@@ -316,32 +317,45 @@ int main(int argc, char **argv) {
 	sigaction(SIGINT, &act, NULL);
 
 	struct state *st;
-
-	do {
-		st = splitter_init(fd);
-		if (!st) sleep(2);
-	} while (!st);
-
-	if (st == NULL) {
-		if (fifo_path) unlink(fifo_path);
-		return 1;
-	}
+	bool last_failed = false;
+	bool initial_connect = true;
 
 	while (true) {
-		if (splitter_update(fd, st)) {
-			if (fifo_path) {
-				close(fd);
-				unlink(fifo_path);
-			}
+		do {
+			st = splitter_init(fd, initial_connect);
+			if (!st) sleep(2);
+		} while (!st);
+
+		initial_connect = false;
+
+		if (st == NULL) {
+			if (fifo_path) unlink(fifo_path);
 			return 1;
 		}
 
-		struct timespec sleep_tv = {
-			.tv_sec = 0,
-			.tv_nsec = 15000000, // 15ms
-		};
+		while (true) {
+			if (splitter_update(fd, st)) {
+				if (last_failed) {
+					if (fifo_path) {
+						close(fd);
+						unlink(fifo_path);
+					}
+					return 1;
+				} else {
+					last_failed = true;
+					break; // re-init
+				}
+			}
 
-		nanosleep(&sleep_tv, NULL);
+			last_failed = false;
+
+			struct timespec sleep_tv = {
+				.tv_sec = 0,
+				.tv_nsec = 15000000, // 15ms
+			};
+
+			nanosleep(&sleep_tv, NULL);
+		}
 	}
 
 	return 0;
