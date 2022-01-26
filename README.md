@@ -68,7 +68,7 @@ protocol](https://github.com/vktec/rift/blob/master/protocol.md). Any
 rift-compliant autosplitter should work with adrift.
 
 Included in the repo is an autosplitter which interfaces with
-[SAR](https://github.com/Blenderiste09/SourceAutoRecord). This splitter
+[SAR](https://github.com/p2sr/SourceAutoRecord). This splitter
 requires ptrace privileges to work, as it must read Portal 2's memory.
 These can be given by running the following command as root:
 
