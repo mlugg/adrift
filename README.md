@@ -81,5 +81,5 @@ To set up adrift you need to create a configuration directory. The directory can
 - splitter
 
 To create the splits file you can read the 'Usage' section of this Readme.
-For the splitter file you can download the splitter from the releases page.
+
 If you compiled adrift, your splitter file will be in ./splitters/sar_split, rename it to splitter and move it to the directory.
