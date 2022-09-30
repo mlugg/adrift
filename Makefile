@@ -1,7 +1,7 @@
 .POSIX:
 .PHONY: all clean splitters
 
-CFLAGS := -Wall -Werror $(shell pkg-config --cflags vtk) -D_POSIX_C_SOURCE=200809L
+CFLAGS := -Wall $(shell pkg-config --cflags vtk) $(shell pkg-config --cflags cairo-xlib) -D_POSIX_C_SOURCE=200809L
 LDFLAGS := $(shell pkg-config --libs vtk) -lpthread
 
 SPLITTER_FLAGS := -D_POSIX_C_SOURCE=200809L

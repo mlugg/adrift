@@ -122,6 +122,7 @@ int main(int argc, char **argv) {
 	ssize_t nsplits = read_splits_file("splits", &splits);
 
 	if (nsplits == -1) {
+		fputs("Error: Missing a splits file.\n", stderr);
 		return 1;
 	}
 

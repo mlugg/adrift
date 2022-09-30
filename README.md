@@ -73,3 +73,13 @@ requires ptrace privileges to work, as it must read Portal 2's memory.
 These can be given by running the following command as root:
 
 	setcap cap_sys_ptrace=eip ./splitter
+
+## Set up
+
+To set up adrift you need to create a configuration directory. The directory can have any name, but the name "portal2" or the category of the speedrun. The directory should contain the files below 
+- splits 
+- splitter
+
+To create the splits file you can read the 'Usage' section of this Readme.
+
+If you compiled adrift, your splitter file will be in ./splitters/sar_split, rename it to splitter and move it to the directory.
